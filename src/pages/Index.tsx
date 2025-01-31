@@ -54,28 +54,23 @@ const Index = () => {
     );
 
     toast({
-      title: "Task Updated",
-      description: "Task status has been successfully updated.",
+      title: "Статус обновлен",
+      description: "Статус задачи успешно изменен",
     });
   };
 
-  const handleEditTask = (task: Task) => {
-    // This would typically open a modal or navigate to an edit page
-    console.log("Editing task:", task);
-    toast({
-      title: "Edit Task",
-      description: "Task editing functionality coming soon.",
-    });
+  const handleEditTask = (updatedTask: Task) => {
+    console.log("Editing task:", updatedTask);
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === updatedTask.id ? { ...updatedTask } : task
+      )
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Tasks</h1>
-          <p className="text-gray-600">Manage and track your assigned tasks</p>
-        </header>
-
         <TaskList
           tasks={tasks}
           onStatusChange={handleStatusChange}
