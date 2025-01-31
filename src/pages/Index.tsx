@@ -1,72 +1,80 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Task } from "@/types/task";
 import { TaskList } from "@/components/TaskList";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data for demonstration
-const mockTasks: Task[] = [
-  {
-    id: "1",
-    title: "Complete Project Proposal",
-    description: "Draft and finalize the project proposal for the new client",
-    status: "in-progress",
-    priority: "high",
-    assignee: "John Doe",
-    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    title: "Review Code Changes",
-    description: "Review and approve pending pull requests",
-    status: "pending",
-    priority: "medium",
-    assignee: "Jane Smith",
-    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    title: "Update Documentation",
-    description: "Update the API documentation with recent changes",
-    status: "completed",
-    priority: "low",
-    assignee: "Bob Johnson",
-    deadline: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+import { taskService } from "@/services/taskService";
 
 const Index = () => {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch tasks
+  const { data: tasks = [], isLoading, error } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: taskService.getTasks,
+  });
+
+  // Create task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: taskService.createTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast({
+        title: "Задача создана",
+        description: "Новая задача успешно добавлена",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать задачу",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update task mutation
+  const updateTaskMutation = useMutation({
+    mutationFn: taskService.updateTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast({
+        title: "Задача обновлена",
+        description: "Изменения успешно сохранены",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить задачу",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId
-          ? { ...task, status: newStatus, updatedAt: new Date() }
-          : task
-      )
-    );
-
-    toast({
-      title: "Статус обновлен",
-      description: "Статус задачи успешно изменен",
-    });
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      updateTaskMutation.mutate({
+        ...task,
+        status: newStatus,
+        updatedAt: new Date(),
+      });
+    }
   };
 
   const handleEditTask = (updatedTask: Task) => {
-    console.log("Editing task:", updatedTask);
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === updatedTask.id ? { ...updatedTask } : task
-      )
-    );
+    updateTaskMutation.mutate(updatedTask);
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">Загрузка...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center min-h-screen">Ошибка загрузки задач</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
