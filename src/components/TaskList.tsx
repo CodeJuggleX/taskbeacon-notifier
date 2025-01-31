@@ -3,6 +3,9 @@ import { Task } from "@/types/task";
 import { TaskCard } from "./TaskCard";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Plus, User } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskListProps {
   tasks: Task[];
@@ -14,6 +17,16 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Task["status"] | "all">("all");
   const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
+  const { toast } = useToast();
+
+  const handleCreateTask = () => {
+    // This is a placeholder - in a real app, this would open a modal or navigate to a create task page
+    toast({
+      title: "Create Task",
+      description: "Task creation functionality coming soon.",
+    });
+    console.log("Create task clicked");
+  };
 
   const filteredAndSortedTasks = tasks
     .filter((task) => {
@@ -33,6 +46,15 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">My Tasks</h2>
+        <Button onClick={handleCreateTask} className="gap-2">
+          <Plus className="h-4 w-4" />
+          <User className="h-4 w-4" />
+          Create Task
+        </Button>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4">
         <Input
           type="search"
