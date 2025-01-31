@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Task } from "@/types/task";
 import { TaskCard } from "./TaskCard";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus, User } from "lucide-react";
+import { CreateTaskDialog } from "./CreateTaskDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface TaskListProps {
@@ -19,13 +17,13 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
   const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
   const { toast } = useToast();
 
-  const handleCreateTask = () => {
-    // This is a placeholder - in a real app, this would open a modal or navigate to a create task page
+  const handleCreateTask = (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
+    // В реальном приложении здесь был бы API-запрос для создания задачи
+    console.log("Creating new task:", newTask);
     toast({
-      title: "Create Task",
-      description: "Task creation functionality coming soon.",
+      title: "Создание задачи",
+      description: "Задача успешно создана",
     });
-    console.log("Create task clicked");
   };
 
   const filteredAndSortedTasks = tasks
@@ -47,18 +45,14 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">My Tasks</h2>
-        <Button onClick={handleCreateTask} className="gap-2">
-          <Plus className="h-4 w-4" />
-          <User className="h-4 w-4" />
-          Create Task
-        </Button>
+        <h2 className="text-2xl font-bold">Мои задачи</h2>
+        <CreateTaskDialog onTaskCreate={handleCreateTask} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Input
           type="search"
-          placeholder="Search tasks..."
+          placeholder="Поиск задач..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1"
@@ -68,18 +62,18 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
           onChange={(e) => setStatusFilter(e.target.value as Task["status"] | "all")}
           className="px-4 py-2 rounded-md border border-gray-200 bg-white"
         >
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="in-progress">In Progress</option>
-          <option value="completed">Completed</option>
+          <option value="all">Все статусы</option>
+          <option value="pending">Ожидает</option>
+          <option value="in-progress">В процессе</option>
+          <option value="completed">Завершена</option>
         </select>
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as "deadline" | "priority")}
           className="px-4 py-2 rounded-md border border-gray-200 bg-white"
         >
-          <option value="deadline">Sort by Deadline</option>
-          <option value="priority">Sort by Priority</option>
+          <option value="deadline">Сортировать по сроку</option>
+          <option value="priority">Сортировать по приоритету</option>
         </select>
       </div>
 
