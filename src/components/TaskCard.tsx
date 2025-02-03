@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { Task } from "@/types/task";
 import { formatDistanceToNow } from "date-fns";
-import { Clock, Flag } from "lucide-react";
+import { Clock, Flag, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditTaskDialog } from "./EditTaskDialog";
+import { Button } from "./ui/button";
 
 interface TaskCardProps {
   task: Task;
   onStatusChange: (taskId: string, newStatus: Task["status"]) => void;
   onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
 }
 
-export const TaskCard = ({ task, onStatusChange, onEdit }: TaskCardProps) => {
+export const TaskCard = ({ task, onStatusChange, onEdit, onDelete }: TaskCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const getDeadlineStatus = () => {
@@ -65,7 +67,17 @@ export const TaskCard = ({ task, onStatusChange, onEdit }: TaskCardProps) => {
 
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-lg font-semibold">{task.title}</h3>
-        <EditTaskDialog task={task} onTaskUpdate={onEdit} />
+        <div className="flex items-center gap-2">
+          <EditTaskDialog task={task} onTaskUpdate={onEdit} />
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={() => onDelete(task.id)}
+            className="h-8 w-8"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <p className="text-gray-600 mb-4 line-clamp-2">{task.description}</p>

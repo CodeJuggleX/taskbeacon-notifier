@@ -22,15 +22,13 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
     try {
       console.log("Creating new task:", newTask);
       
-      // Create a complete task object with generated ID and timestamps
       const completeTask: Task = {
         ...newTask,
-        id: crypto.randomUUID(), // Generate a unique ID
+        id: crypto.randomUUID(),
         createdAt: new Date(),
         updatedAt: new Date()
       };
 
-      // Add the new task to the state
       setTasks(prevTasks => [...prevTasks, completeTask]);
 
       toast({
@@ -48,6 +46,17 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
       });
       throw error;
     }
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    console.log("Deleting task:", taskId);
+    
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    
+    toast({
+      title: "Задача удалена",
+      description: "Задача была успешно удалена из системы",
+    });
   };
 
   const filteredAndSortedTasks = tasks
@@ -108,6 +117,7 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
             task={task}
             onStatusChange={onStatusChange}
             onEdit={onEdit}
+            onDelete={handleDeleteTask}
           />
         ))}
       </div>
