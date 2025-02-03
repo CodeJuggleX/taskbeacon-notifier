@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EditTaskDialog } from "./EditTaskDialog";
 import { Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface TaskListProps {
   tasks: Task[];
@@ -20,6 +21,7 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Task["status"] | "all">("all");
   const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { toast } = useToast();
 
   const handleCreateTask = async (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
@@ -61,6 +63,10 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
       title: "Задача удалена",
       description: "Задача была успешно удалена из системы",
     });
+  };
+
+  const handleRowClick = (task: Task) => {
+    setSelectedTask(task);
   };
 
   const getStatusBadgeClass = (status: Task["status"]) => {
@@ -168,7 +174,11 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
           </TableHeader>
           <TableBody>
             {filteredAndSortedTasks.map((task) => (
-              <TableRow key={task.id}>
+              <TableRow 
+                key={task.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleRowClick(task)}
+              >
                 <TableCell className="font-medium">{task.title}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{task.description}</TableCell>
                 <TableCell>
@@ -179,7 +189,7 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
                 <TableCell>{getPriorityText(task.priority)}</TableCell>
                 <TableCell>{task.assignee}</TableCell>
                 <TableCell>{format(new Date(task.deadline), 'dd.MM.yyyy')}</TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-2">
                     <EditTaskDialog task={task} onTaskUpdate={onEdit} />
                     <Button
@@ -197,6 +207,40 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{selectedTask?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <h4 className="font-medium mb-2">Описание</h4>
+              <p className="text-gray-600">{selectedTask?.description}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium mb-2">Статус</h4>
+                <span className={`px-2 py-1 rounded-full text-sm ${selectedTask && getStatusBadgeClass(selectedTask.status)}`}>
+                  {selectedTask && getStatusText(selectedTask.status)}
+                </span>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Приоритет</h4>
+                <p>{selectedTask && getPriorityText(selectedTask.priority)}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Исполнитель</h4>
+                <p>{selectedTask?.assignee}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Срок</h4>
+                <p>{selectedTask && format(new Date(selectedTask.deadline), 'dd.MM.yyyy')}</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
