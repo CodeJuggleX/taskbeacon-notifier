@@ -21,7 +21,7 @@ export const CreateTaskDialog = ({ onTaskCreate }: CreateTaskDialogProps) => {
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title || !description || !assignee || !deadline) {
@@ -33,23 +33,29 @@ export const CreateTaskDialog = ({ onTaskCreate }: CreateTaskDialogProps) => {
       return;
     }
 
-    const newTask = {
-      title,
-      description,
-      assignee,
-      deadline: new Date(deadline),
-      status,
-      priority,
-    };
+    try {
+      const newTask = {
+        title,
+        description,
+        assignee,
+        deadline: new Date(deadline),
+        status,
+        priority,
+      };
 
-    onTaskCreate(newTask);
-    setOpen(false);
-    resetForm();
+      await onTaskCreate(newTask);
+      setOpen(false);
+      resetForm();
 
-    toast({
-      title: "Задача создана",
-      description: "Новая задача успешно добавлена",
-    });
+      console.log("Task created successfully:", newTask);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать задачу. Попробуйте позже.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {

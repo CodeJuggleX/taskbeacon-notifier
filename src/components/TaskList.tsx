@@ -17,13 +17,23 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
   const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
   const { toast } = useToast();
 
-  const handleCreateTask = (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
-    // В реальном приложении здесь был бы API-запрос для создания задачи
-    console.log("Creating new task:", newTask);
-    toast({
-      title: "Создание задачи",
-      description: "Задача успешно создана",
-    });
+  const handleCreateTask = async (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      console.log("Creating new task:", newTask);
+      // Here we would typically make an API call to create the task
+      // For now, we'll just show a success message
+      toast({
+        title: "Задача создана",
+        description: "Новая задача успешно добавлена в систему",
+      });
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать задачу. Попробуйте позже.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredAndSortedTasks = tasks
