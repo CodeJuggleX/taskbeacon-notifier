@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Task } from "@/types/task";
-import { TaskCard } from "./TaskCard";
 import { Input } from "@/components/ui/input";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { EditTaskDialog } from "./EditTaskDialog";
+import { Trash2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface TaskListProps {
   tasks: Task[];
@@ -59,6 +63,45 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
     });
   };
 
+  const getStatusBadgeClass = (status: Task["status"]) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      default:
+        return "";
+    }
+  };
+
+  const getStatusText = (status: Task["status"]) => {
+    switch (status) {
+      case "pending":
+        return "Ожидает";
+      case "in-progress":
+        return "В процессе";
+      case "completed":
+        return "Завершена";
+      default:
+        return status;
+    }
+  };
+
+  const getPriorityText = (priority: Task["priority"]) => {
+    switch (priority) {
+      case "low":
+        return "Низкий";
+      case "medium":
+        return "Средний";
+      case "high":
+        return "Высокий";
+      default:
+        return priority;
+    }
+  };
+
   const filteredAndSortedTasks = tasks
     .filter((task) => {
       const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,7 +125,7 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
         <CreateTaskDialog onTaskCreate={handleCreateTask} />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <Input
           type="search"
           placeholder="Поиск задач..."
@@ -110,16 +153,49 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedTasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onStatusChange={onStatusChange}
-            onEdit={onEdit}
-            onDelete={handleDeleteTask}
-          />
-        ))}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Название</TableHead>
+              <TableHead>Описание</TableHead>
+              <TableHead>Статус</TableHead>
+              <TableHead>Приоритет</TableHead>
+              <TableHead>Исполнитель</TableHead>
+              <TableHead>Срок</TableHead>
+              <TableHead>Действия</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredAndSortedTasks.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell className="font-medium">{task.title}</TableCell>
+                <TableCell className="max-w-[200px] truncate">{task.description}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-sm ${getStatusBadgeClass(task.status)}`}>
+                    {getStatusText(task.status)}
+                  </span>
+                </TableCell>
+                <TableCell>{getPriorityText(task.priority)}</TableCell>
+                <TableCell>{task.assignee}</TableCell>
+                <TableCell>{format(new Date(task.deadline), 'dd.MM.yyyy')}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <EditTaskDialog task={task} onTaskUpdate={onEdit} />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
