@@ -11,7 +11,8 @@ interface TaskListProps {
   onEdit: (task: Task) => void;
 }
 
-export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
+export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskListProps) => {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Task["status"] | "all">("all");
   const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
@@ -20,12 +21,24 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
   const handleCreateTask = async (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
     try {
       console.log("Creating new task:", newTask);
-      // Here we would typically make an API call to create the task
-      // For now, we'll just show a success message
+      
+      // Create a complete task object with generated ID and timestamps
+      const completeTask: Task = {
+        ...newTask,
+        id: crypto.randomUUID(), // Generate a unique ID
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Add the new task to the state
+      setTasks(prevTasks => [...prevTasks, completeTask]);
+
       toast({
         title: "Задача создана",
         description: "Новая задача успешно добавлена в систему",
       });
+
+      return completeTask;
     } catch (error) {
       console.error("Error creating task:", error);
       toast({
@@ -33,6 +46,7 @@ export const TaskList = ({ tasks, onStatusChange, onEdit }: TaskListProps) => {
         description: "Не удалось создать задачу. Попробуйте позже.",
         variant: "destructive",
       });
+      throw error;
     }
   };
 
