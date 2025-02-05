@@ -1,14 +1,33 @@
 import { useState } from "react";
 import { Task } from "@/types/task";
-import { Input } from "@/components/ui/input";
-import { CreateTaskDialog } from "./CreateTaskDialog";
 import { useToast } from "@/hooks/use-toast";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
-import { Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableContainer,
+  Paper,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  TextField,
+  IconButton,
+  Typography,
+  Chip,
+  Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 
 interface TaskListProps {
   tasks: Task[];
@@ -69,16 +88,16 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
     setSelectedTask(task);
   };
 
-  const getStatusBadgeClass = (status: Task["status"]) => {
+  const getStatusColor = (status: Task["status"]) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "warning";
       case "in-progress":
-        return "bg-blue-100 text-blue-800";
+        return "info";
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "success";
       default:
-        return "";
+        return "default";
     }
   };
 
@@ -125,122 +144,139 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
     });
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Мои задачи</h2>
+    <Box sx={{ width: '100%', p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h2">Мои задачи</Typography>
         <CreateTaskDialog onTaskCreate={handleCreateTask} />
-      </div>
+      </Box>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <Input
-          type="search"
-          placeholder="Поиск задач..."
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <TextField
+          fullWidth
+          label="Поиск задач..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
         />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as Task["status"] | "all")}
-          className="px-4 py-2 rounded-md border border-gray-200 bg-white"
-        >
-          <option value="all">Все статусы</option>
-          <option value="pending">Ожидает</option>
-          <option value="in-progress">В процессе</option>
-          <option value="completed">Завершена</option>
-        </select>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as "deadline" | "priority")}
-          className="px-4 py-2 rounded-md border border-gray-200 bg-white"
-        >
-          <option value="deadline">Сортировать по сроку</option>
-          <option value="priority">Сортировать по приоритету</option>
-        </select>
-      </div>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Статус</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Статус"
+            onChange={(e) => setStatusFilter(e.target.value as Task["status"] | "all")}
+          >
+            <MenuItem value="all">Все статусы</MenuItem>
+            <MenuItem value="pending">Ожидает</MenuItem>
+            <MenuItem value="in-progress">В процессе</MenuItem>
+            <MenuItem value="completed">Завершена</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Сортировка</InputLabel>
+          <Select
+            value={sortBy}
+            label="Сортировка"
+            onChange={(e) => setSortBy(e.target.value as "deadline" | "priority")}
+          >
+            <MenuItem value="deadline">По сроку</MenuItem>
+            <MenuItem value="priority">По приоритету</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
-      <div className="rounded-md border">
+      <TableContainer component={Paper}>
         <Table>
-          <TableHeader>
+          <TableHead>
             <TableRow>
-              <TableHead>Название</TableHead>
-              <TableHead>Описание</TableHead>
-              <TableHead>Статус</TableHead>
-              <TableHead>Приоритет</TableHead>
-              <TableHead>Исполнитель</TableHead>
-              <TableHead>Срок</TableHead>
-              <TableHead>Действия</TableHead>
+              <TableCell>Название</TableCell>
+              <TableCell>Описание</TableCell>
+              <TableCell>Статус</TableCell>
+              <TableCell>Приоритет</TableCell>
+              <TableCell>Исполнитель</TableCell>
+              <TableCell>Срок</TableCell>
+              <TableCell>Действия</TableCell>
             </TableRow>
-          </TableHeader>
+          </TableHead>
           <TableBody>
             {filteredAndSortedTasks.map((task) => (
-              <TableRow 
+              <TableRow
                 key={task.id}
-                className="cursor-pointer hover:bg-gray-50"
+                hover
                 onClick={() => handleRowClick(task)}
+                sx={{ cursor: 'pointer' }}
               >
-                <TableCell className="font-medium">{task.title}</TableCell>
-                <TableCell className="max-w-[200px] truncate">{task.description}</TableCell>
+                <TableCell>{task.title}</TableCell>
+                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {task.description}
+                </TableCell>
                 <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-sm ${getStatusBadgeClass(task.status)}`}>
-                    {getStatusText(task.status)}
-                  </span>
+                  <Chip
+                    label={getStatusText(task.status)}
+                    color={getStatusColor(task.status)}
+                    size="small"
+                  />
                 </TableCell>
                 <TableCell>{getPriorityText(task.priority)}</TableCell>
                 <TableCell>{task.assignee}</TableCell>
                 <TableCell>{format(new Date(task.deadline), 'dd.MM.yyyy')}</TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center gap-2">
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     <EditTaskDialog task={task} onTaskUpdate={onEdit} />
-                    <Button
-                      variant="destructive"
-                      size="icon"
+                    <IconButton
+                      size="small"
+                      color="error"
                       onClick={() => handleDeleteTask(task.id)}
-                      className="h-8 w-8"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
+      </TableContainer>
 
-      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>{selectedTask?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <h4 className="font-medium mb-2">Описание</h4>
-              <p className="text-gray-600">{selectedTask?.description}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium mb-2">Статус</h4>
-                <span className={`px-2 py-1 rounded-full text-sm ${selectedTask && getStatusBadgeClass(selectedTask.status)}`}>
-                  {selectedTask && getStatusText(selectedTask.status)}
-                </span>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Приоритет</h4>
-                <p>{selectedTask && getPriorityText(selectedTask.priority)}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Исполнитель</h4>
-                <p>{selectedTask?.assignee}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Срок</h4>
-                <p>{selectedTask && format(new Date(selectedTask.deadline), 'dd.MM.yyyy')}</p>
-              </div>
-            </div>
-          </div>
+      <Dialog
+        open={!!selectedTask}
+        onClose={() => setSelectedTask(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{selectedTask?.title}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'grid', gap: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold">Описание</Typography>
+            <Typography>{selectedTask?.description}</Typography>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">Статус</Typography>
+                {selectedTask && (
+                  <Chip
+                    label={getStatusText(selectedTask.status)}
+                    color={getStatusColor(selectedTask.status)}
+                    size="small"
+                  />
+                )}
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">Приоритет</Typography>
+                <Typography>{selectedTask && getPriorityText(selectedTask.priority)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">Исполнитель</Typography>
+                <Typography>{selectedTask?.assignee}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold">Срок</Typography>
+                <Typography>
+                  {selectedTask && format(new Date(selectedTask.deadline), 'dd.MM.yyyy')}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         </DialogContent>
       </Dialog>
-    </div>
+    </Box>
   );
 };

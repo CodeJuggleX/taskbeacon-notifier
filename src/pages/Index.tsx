@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Task } from "@/types/task";
 import { TaskList } from "@/components/TaskList";
 import { useToast } from "@/hooks/use-toast";
+import { Container } from "@mui/material";
 
 // Mock data for demonstration
 const mockTasks: Task[] = [
@@ -69,15 +70,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container py-8">
-        <TaskList
-          tasks={tasks}
-          onStatusChange={handleStatusChange}
-          onEdit={handleEditTask}
-        />
-      </div>
-    </div>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <TaskList
+        tasks={tasks}
+        onStatusChange={handleStatusChange}
+        onEdit={handleEditTask}
+      />
+    </Container>
   );
 };
 
