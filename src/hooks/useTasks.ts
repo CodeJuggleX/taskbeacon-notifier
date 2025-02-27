@@ -1,41 +1,16 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TasksApi } from "@/api";
-import { TransformedTask } from "@/types/task";
+import { Task } from "@/types/task";
 import { useToast } from "./use-toast";
-import { useNavigate } from "react-router-dom";
 
 export const useTasks = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const navigate = useNavigate();
-
-  // Function to check authentication
-  const checkAuthentication = () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      toast({
-        title: "Требуется авторизация",
-        description: "Пожалуйста, войдите в систему",
-        variant: "destructive",
-      });
-      navigate('/login');
-      return false;
-    }
-    return true;
-  };
 
   // Query for fetching all tasks
-  const { data: tasks, isLoading, error, refetch } = useQuery({
+  const { data: tasks, isLoading, error } = useQuery({
     queryKey: ["tasks"],
-    queryFn: async () => {
-      if (!checkAuthentication()) {
-        throw new Error("Authentication required");
-      }
-      return TasksApi.getAllTasks();
-    },
-    retry: 1,
-    refetchOnWindowFocus: false,
+    queryFn: TasksApi.getAllTasks,
   });
 
   // Mutation for creating a task
@@ -55,17 +30,12 @@ export const useTasks = () => {
         description: "Не удалось создать задачу",
         variant: "destructive",
       });
-      
-      // Check if error is due to authentication
-      if (error instanceof Error && error.message.includes("401")) {
-        navigate('/login');
-      }
     },
   });
 
   // Mutation for updating a task
   const updateTaskMutation = useMutation({
-    mutationFn: ({ taskId, task }: { taskId: string; task: Partial<TransformedTask> }) =>
+    mutationFn: ({ taskId, task }: { taskId: string; task: Partial<Task> }) =>
       TasksApi.updateTask(taskId, task),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -81,11 +51,6 @@ export const useTasks = () => {
         description: "Не удалось обновить задачу",
         variant: "destructive",
       });
-      
-      // Check if error is due to authentication
-      if (error instanceof Error && error.message.includes("401")) {
-        navigate('/login');
-      }
     },
   });
 
@@ -106,36 +71,6 @@ export const useTasks = () => {
         description: "Не удалось удалить задачу",
         variant: "destructive",
       });
-      
-      // Check if error is due to authentication
-      if (error instanceof Error && error.message.includes("401")) {
-        navigate('/login');
-      }
-    },
-  });
-
-  // Mutation for marking a task as completed
-  const markAsCompletedMutation = useMutation({
-    mutationFn: TasksApi.markAsCompleted,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      toast({
-        title: "Задача завершена",
-        description: "Задача отмечена как завершенная",
-      });
-    },
-    onError: (error) => {
-      console.error("Error marking task as completed:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось завершить задачу",
-        variant: "destructive",
-      });
-      
-      // Check if error is due to authentication
-      if (error instanceof Error && error.message.includes("401")) {
-        navigate('/login');
-      }
     },
   });
 
@@ -146,7 +81,5 @@ export const useTasks = () => {
     createTask: createTaskMutation.mutate,
     updateTask: updateTaskMutation.mutate,
     deleteTask: deleteTaskMutation.mutate,
-    markAsCompleted: markAsCompletedMutation.mutate,
-    refetchTasks: refetch,
   };
 };

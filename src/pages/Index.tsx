@@ -1,94 +1,78 @@
-
-import { useTasks } from "@/hooks/useTasks";
+import { useState } from "react";
+import { Task } from "@/types/task";
 import { TaskList } from "@/components/TaskList";
 import { useToast } from "@/hooks/use-toast";
-import { Container, CircularProgress, Alert, Button, Box, Typography } from "@mui/material";
-import { TransformedTask } from "@/types/task";
-import { useEffect } from "react";
-import { UserProfile } from "@/components/UserProfile";
+import { Container } from "@mui/material";
+
+// Mock data for demonstration
+const mockTasks: Task[] = [
+  {
+    id: "1",
+    title: "Complete Project Proposal",
+    description: "Draft and finalize the project proposal for the new client",
+    status: "in-progress",
+    priority: "high",
+    assignee: "John Doe",
+    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "2",
+    title: "Review Code Changes",
+    description: "Review and approve pending pull requests",
+    status: "pending",
+    priority: "medium",
+    assignee: "Jane Smith",
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "3",
+    title: "Update Documentation",
+    description: "Update the API documentation with recent changes",
+    status: "completed",
+    priority: "low",
+    assignee: "Bob Johnson",
+    deadline: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
 
 const Index = () => {
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const { toast } = useToast();
-  const { 
-    tasks, 
-    isLoading, 
-    error, 
-    updateTask, 
-    deleteTask, 
-    markAsCompleted,
-    refetchTasks 
-  } = useTasks();
 
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Ошибка соединения",
-        description: String(error),
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
+  const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId
+          ? { ...task, status: newStatus, updatedAt: new Date() }
+          : task
+      )
+    );
 
-  const handleStatusChange = (taskId: string, newStatus: TransformedTask["status"]) => {
-    updateTask({ 
-      taskId, 
-      task: { status: newStatus } 
-    });
-    
-    // If status changed to completed, also call the markAsCompleted endpoint
-    if (newStatus === "completed") {
-      markAsCompleted(taskId);
-    }
-  };
-
-  const handleEditTask = (updatedTask: TransformedTask) => {
-    updateTask({ 
-      taskId: updatedTask.id, 
-      task: updatedTask 
+    toast({
+      title: "Статус обновлен",
+      description: "Статус задачи успешно изменен",
     });
   };
 
-  if (isLoading) {
-    return (
-      <Container maxWidth="xl" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Container>
+  const handleEditTask = (updatedTask: Task) => {
+    console.log("Editing task:", updatedTask);
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === updatedTask.id ? { ...updatedTask } : task
+      )
     );
-  }
-
-  if (error) {
-    return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Alert 
-          severity="error" 
-          sx={{ mb: 2 }}
-          action={
-            <Button color="inherit" size="small" onClick={() => refetchTasks()}>
-              Повторить
-            </Button>
-          }
-        >
-          <Typography fontWeight="bold">Ошибка при загрузке задач:</Typography> 
-          <Typography>{String(error)}</Typography>
-        </Alert>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Button 
-            variant="contained" 
-            onClick={() => refetchTasks()}
-            size="large"
-          >
-            Повторить запрос
-          </Button>
-        </Box>
-      </Container>
-    );
-  }
+  };
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <UserProfile />
       <TaskList
-        tasks={tasks || []}
+        tasks={tasks}
         onStatusChange={handleStatusChange}
         onEdit={handleEditTask}
       />
