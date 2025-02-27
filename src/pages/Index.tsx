@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Container, CircularProgress, Alert, Button, Box, Typography } from "@mui/material";
 import { Task } from "@/types/task";
 import { useEffect } from "react";
+import { UserProfile } from "@/components/UserProfile";
 
 const Index = () => {
   const { toast } = useToast();
@@ -77,6 +78,7 @@ const Index = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
+      <UserProfile />
       <TaskList
         tasks={tasks || []}
         onStatusChange={handleStatusChange}

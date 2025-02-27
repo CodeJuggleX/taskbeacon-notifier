@@ -1,29 +1,13 @@
 
 import { Task } from "@/types/task";
-
-// API base URL from the provided backend
-const API_BASE_URL = "http://192.168.38.236:8000/api/v1";
+import { apiClient } from "./apiClient";
 
 export const TasksApi = {
   // Get all tasks
   getAllTasks: async (): Promise<Task[]> => {
     console.log("Fetching all tasks from API");
     try {
-      const response = await fetch(`${API_BASE_URL}/todo/todos/`, {
-        // Adding CORS mode to try to resolve cross-origin issues
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await apiClient<any[]>('/todo/todos/', 'GET');
       console.log("Successfully fetched tasks:", data);
       
       // Transform API data to match our Task interface
@@ -59,22 +43,7 @@ export const TasksApi = {
     };
     
     try {
-      const response = await fetch(`${API_BASE_URL}/todo/todos/`, {
-        method: "POST",
-        mode: 'cors',
-        headers: {
-          "Content-Type": "application/json",
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(apiTask),
-      });
-      
-      if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await apiClient<any>('/todo/todos/', 'POST', apiTask);
       console.log("Task created successfully:", data);
       
       // Transform response back to our Task interface
@@ -110,22 +79,7 @@ export const TasksApi = {
     if (task.deadline !== undefined) apiTaskUpdate.due_date = task.deadline.toISOString();
     
     try {
-      const response = await fetch(`${API_BASE_URL}/todo/todos/${taskId}/`, {
-        method: "PATCH",
-        mode: 'cors',
-        headers: {
-          "Content-Type": "application/json",
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(apiTaskUpdate),
-      });
-      
-      if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await apiClient<any>(`/todo/todos/${taskId}/`, 'PATCH', apiTaskUpdate);
       console.log("Task updated successfully:", data);
       
       // Transform response back to our Task interface
@@ -150,30 +104,43 @@ export const TasksApi = {
   deleteTask: async (taskId: string): Promise<void> => {
     console.log("Deleting task:", taskId);
     try {
-      const response = await fetch(`${API_BASE_URL}/todo/todos/${taskId}/`, {
-        method: "DELETE",
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
-      }
-      
+      await apiClient<void>(`/todo/todos/${taskId}/`, 'DELETE');
       console.log("Task deleted successfully");
     } catch (error) {
       console.error("Error deleting task:", error);
       throw new Error(`Failed to delete task: ${error instanceof Error ? error.message : String(error)}`);
     }
   },
+
+  // Mark a task as completed
+  markAsCompleted: async (taskId: string): Promise<Task> => {
+    console.log("Marking task as completed:", taskId);
+    try {
+      const data = await apiClient<any>(`/todo/todos/${taskId}/mark_as_completed/`, 'POST');
+      console.log("Task marked as completed:", data);
+      
+      // Transform response back to our Task interface
+      return {
+        id: data.id.toString(),
+        title: data.title,
+        description: data.description || "",
+        status: mapStatusFromApi(data.status),
+        priority: mapPriorityFromApi(data.priority),
+        assignee: data.assignee || "Не назначено",
+        deadline: new Date(data.due_date || Date.now()),
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at),
+      };
+    } catch (error) {
+      console.error("Error marking task as completed:", error);
+      throw new Error(`Failed to mark task as completed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 };
 
 // Helper functions to map between our app's status/priority and the API's
 function mapStatusFromApi(apiStatus: string): Task["status"] {
-  switch (apiStatus.toLowerCase()) {
+  switch (apiStatus?.toLowerCase()) {
     case "pending":
     case "new":
       return "pending";
