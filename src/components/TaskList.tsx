@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Task } from "@/types/task";
 import { useToast } from "@/hooks/use-toast";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { EditTaskDialog } from "./EditTaskDialog";
 import { format } from "date-fns";
+import { useTasks } from "@/hooks/useTasks";
 import {
   Table,
   TableBody,
@@ -36,32 +38,18 @@ interface TaskListProps {
 }
 
 export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskListProps) => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Task["status"] | "all">("all");
   const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { toast } = useToast();
+  const { createTask, deleteTask } = useTasks();
 
   const handleCreateTask = async (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
     try {
       console.log("Creating new task:", newTask);
-      
-      const completeTask: Task = {
-        ...newTask,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      setTasks(prevTasks => [...prevTasks, completeTask]);
-
-      toast({
-        title: "Задача создана",
-        description: "Новая задача успешно добавлена в систему",
-      });
-
-      return completeTask;
+      await createTask(newTask);
+      return newTask as Task;
     } catch (error) {
       console.error("Error creating task:", error);
       toast({
@@ -75,13 +63,7 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
 
   const handleDeleteTask = (taskId: string) => {
     console.log("Deleting task:", taskId);
-    
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-    
-    toast({
-      title: "Задача удалена",
-      description: "Задача была успешно удалена из системы",
-    });
+    deleteTask(taskId);
   };
 
   const handleRowClick = (task: Task) => {
@@ -127,7 +109,7 @@ export const TaskList = ({ tasks: initialTasks, onStatusChange, onEdit }: TaskLi
     }
   };
 
-  const filteredAndSortedTasks = tasks
+  const filteredAndSortedTasks = initialTasks
     .filter((task) => {
       const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           task.description.toLowerCase().includes(searchQuery.toLowerCase());
