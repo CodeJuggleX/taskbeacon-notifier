@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TasksApi } from "@/api";
 import { Task } from "@/types/task";
@@ -8,9 +9,12 @@ export const useTasks = () => {
   const { toast } = useToast();
 
   // Query for fetching all tasks
-  const { data: tasks, isLoading, error } = useQuery({
+  const { data: tasks, isLoading, error, refetch } = useQuery({
     queryKey: ["tasks"],
     queryFn: TasksApi.getAllTasks,
+    // Add retry options to make more attempts before failing
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Mutation for creating a task
@@ -81,5 +85,6 @@ export const useTasks = () => {
     createTask: createTaskMutation.mutate,
     updateTask: updateTaskMutation.mutate,
     deleteTask: deleteTaskMutation.mutate,
+    refetchTasks: refetch,
   };
 };

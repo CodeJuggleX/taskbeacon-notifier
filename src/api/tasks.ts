@@ -8,24 +8,40 @@ export const TasksApi = {
   // Get all tasks
   getAllTasks: async (): Promise<Task[]> => {
     console.log("Fetching all tasks from API");
-    const response = await fetch(`${API_BASE_URL}/todo/todos/`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch tasks");
+    try {
+      const response = await fetch(`${API_BASE_URL}/todo/todos/`, {
+        // Adding CORS mode to try to resolve cross-origin issues
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Successfully fetched tasks:", data);
+      
+      // Transform API data to match our Task interface
+      return data.map((item: any) => ({
+        id: item.id.toString(),
+        title: item.title,
+        description: item.description || "",
+        status: mapStatusFromApi(item.status),
+        priority: mapPriorityFromApi(item.priority),
+        assignee: item.assignee || "Не назначено",
+        deadline: new Date(item.due_date || Date.now()),
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at),
+      }));
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      throw new Error(`Failed to fetch tasks: ${error instanceof Error ? error.message : String(error)}`);
     }
-    const data = await response.json();
-    
-    // Transform API data to match our Task interface
-    return data.map((item: any) => ({
-      id: item.id.toString(),
-      title: item.title,
-      description: item.description || "",
-      status: mapStatusFromApi(item.status),
-      priority: mapPriorityFromApi(item.priority),
-      assignee: item.assignee || "Не назначено",
-      deadline: new Date(item.due_date || Date.now()),
-      createdAt: new Date(item.created_at),
-      updatedAt: new Date(item.updated_at),
-    }));
   },
 
   // Create a new task
@@ -42,32 +58,41 @@ export const TasksApi = {
       due_date: task.deadline.toISOString(),
     };
     
-    const response = await fetch(`${API_BASE_URL}/todo/todos/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(apiTask),
-    });
-    
-    if (!response.ok) {
-      throw new Error("Failed to create task");
+    try {
+      const response = await fetch(`${API_BASE_URL}/todo/todos/`, {
+        method: "POST",
+        mode: 'cors',
+        headers: {
+          "Content-Type": "application/json",
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(apiTask),
+      });
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Task created successfully:", data);
+      
+      // Transform response back to our Task interface
+      return {
+        id: data.id.toString(),
+        title: data.title,
+        description: data.description || "",
+        status: mapStatusFromApi(data.status),
+        priority: mapPriorityFromApi(data.priority),
+        assignee: data.assignee || "Не назначено",
+        deadline: new Date(data.due_date || Date.now()),
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at),
+      };
+    } catch (error) {
+      console.error("Error creating task:", error);
+      throw new Error(`Failed to create task: ${error instanceof Error ? error.message : String(error)}`);
     }
-    
-    const data = await response.json();
-    
-    // Transform response back to our Task interface
-    return {
-      id: data.id.toString(),
-      title: data.title,
-      description: data.description || "",
-      status: mapStatusFromApi(data.status),
-      priority: mapPriorityFromApi(data.priority),
-      assignee: data.assignee || "Не назначено",
-      deadline: new Date(data.due_date || Date.now()),
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-    };
   },
 
   // Update an existing task
@@ -84,42 +109,64 @@ export const TasksApi = {
     if (task.assignee !== undefined) apiTaskUpdate.assignee = task.assignee;
     if (task.deadline !== undefined) apiTaskUpdate.due_date = task.deadline.toISOString();
     
-    const response = await fetch(`${API_BASE_URL}/todo/todos/${taskId}/`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(apiTaskUpdate),
-    });
-    
-    if (!response.ok) {
-      throw new Error("Failed to update task");
+    try {
+      const response = await fetch(`${API_BASE_URL}/todo/todos/${taskId}/`, {
+        method: "PATCH",
+        mode: 'cors',
+        headers: {
+          "Content-Type": "application/json",
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(apiTaskUpdate),
+      });
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Task updated successfully:", data);
+      
+      // Transform response back to our Task interface
+      return {
+        id: data.id.toString(),
+        title: data.title,
+        description: data.description || "",
+        status: mapStatusFromApi(data.status),
+        priority: mapPriorityFromApi(data.priority),
+        assignee: data.assignee || "Не назначено",
+        deadline: new Date(data.due_date || Date.now()),
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at),
+      };
+    } catch (error) {
+      console.error("Error updating task:", error);
+      throw new Error(`Failed to update task: ${error instanceof Error ? error.message : String(error)}`);
     }
-    
-    const data = await response.json();
-    
-    // Transform response back to our Task interface
-    return {
-      id: data.id.toString(),
-      title: data.title,
-      description: data.description || "",
-      status: mapStatusFromApi(data.status),
-      priority: mapPriorityFromApi(data.priority),
-      assignee: data.assignee || "Не назначено",
-      deadline: new Date(data.due_date || Date.now()),
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-    };
   },
 
   // Delete a task
   deleteTask: async (taskId: string): Promise<void> => {
     console.log("Deleting task:", taskId);
-    const response = await fetch(`${API_BASE_URL}/todo/todos/${taskId}/`, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      throw new Error("Failed to delete task");
+    try {
+      const response = await fetch(`${API_BASE_URL}/todo/todos/${taskId}/`, {
+        method: "DELETE",
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log("Task deleted successfully");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      throw new Error(`Failed to delete task: ${error instanceof Error ? error.message : String(error)}`);
     }
   },
 };
